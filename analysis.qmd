@@ -55,3 +55,30 @@ ggplot(data = df_train,aes(y = ext_col,x = price)) + geom_boxplot()
 ggplot(data = df_train,aes(y = brand,x = price)) + geom_boxplot()
 ```
 
+```{r}
+engine_specs <- str_split(df_train$engine," ") %>% unlist() %>% as.data.frame()
+
+```
+
+```{r}
+engine_specs <- strsplit(df_train$engine, " ")
+
+max_length <- max(sapply(engine_specs, length))
+
+
+split_df <- as.data.frame(matrix(NA, nrow = nrow(df_train), ncol = max_length))
+
+
+colnames(split_df) <- paste0("Engine_spec", 1:max_length)
+
+for (i in 1:nrow(df_train)) {
+  split_df[i, 1:length(engine_specs[[i]])] <- engine_specs[[i]]
+}
+```
+
+
+```{r}
+# Combine the new columns with the original dataframe
+df_train <- bind_cols(df_train, split_df)
+```
+
