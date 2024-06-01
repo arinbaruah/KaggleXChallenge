@@ -1,0 +1,57 @@
+---
+title: "KaggleXChallenge"
+author: "Arindam Baruah"
+format: html
+---
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+df_train <- read_csv("data/train.csv")
+df_test <- read_csv("data/test.csv")
+```
+```{r}
+ggplot(data = df_train,aes(y = as.factor(model_year),x = price)) + geom_boxplot()
+```
+
+```{r}
+ggplot(data = df_train,aes(y = milage,x = price)) + geom_point()
+```
+
+```{r}
+ggplot(data = df_train %>% filter(price < 10^6),aes(y = fuel_type,x = price)) + geom_boxplot()
+```
+
+
+```{r}
+ggplot(data = df_train %>% filter(price < 10^6),aes(y = int_col,x = price)) + geom_boxplot()
+```
+
+
+```{r}
+ggplot(data = df_train %>% filter(price < 10^6),aes(y = accident,x = price)) + geom_boxplot()
+```
+
+
+```{r}
+ggplot(data = df_train %>% filter(price < 10^6),aes(y = transmission,x = price)) + geom_boxplot()
+```
+
+
+```{r}
+ggplot(data = df_train,aes(y = ext_col,x = price)) + geom_boxplot()
+```
+
+
+```{r}
+ggplot(data = df_train,aes(y = ext_col,x = price)) + geom_boxplot()
+```
+
+
+
+```{r}
+ggplot(data = df_train,aes(y = brand,x = price)) + geom_boxplot()
+```
+
