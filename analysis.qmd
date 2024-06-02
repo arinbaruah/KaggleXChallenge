@@ -82,3 +82,8 @@ for (i in 1:nrow(df_train)) {
 df_train <- bind_cols(df_train, split_df)
 ```
 
+
+
+
+
+
