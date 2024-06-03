@@ -21,7 +21,7 @@ ggplot(data = df_train,aes(y = milage,x = price)) + geom_point()
 ```
 
 ```{r}
-ggplot(data = df_train %>% filter(price < 10^6),aes(y = fuel_type,x = price)) + geom_boxplot()
+ggplot(data = df_train ,aes(y = fuel_type,x = price)) + geom_boxplot()
 ```
 
 
@@ -83,7 +83,16 @@ df_train <- bind_cols(df_train, split_df)
 ```
 
 
+```{r}
+df_train <- df_train %>% mutate(premiumness = case_when(price > 10^6 ~ "Luxurious",
+                                                        price < 10^6 & price >250000 ~ "Premium",
+                                                        price > 80000 & price <= 250000 ~ "Mid range",
+                                                        
+                                                        price <= 80000 ~ "General"))
+```
 
 
-
+```{r}
+ggplot(data = df_train,aes(y = price,x = premiumness)) + geom_boxplot()
+```
 
