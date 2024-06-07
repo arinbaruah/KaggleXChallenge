@@ -127,4 +127,9 @@ df_group_brand <- df_train %>% group_by(brand,premiumness) %>% summarise(Total =
 ggplot(df_group_brand,aes(x = reorder(brand,Total),y = Total,fill = premiumness)) + geom_col() + coord_flip() 
 ```
 
-
+```{r}
+ggplot(data = df_train,aes(y = Engine_spec1,x = price)) + geom_point()
+```
+```{r}
+ggplot(data = df_train %>% filter(premiumness != "Luxurious"),aes(y = Engine_spec2,x = price)) + geom_boxplot()
+```
