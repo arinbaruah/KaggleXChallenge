@@ -96,3 +96,28 @@ df_train <- df_train %>% mutate(premiumness = case_when(price > 10^6 ~ "Luxuriou
 ggplot(data = df_train,aes(y = price,x = premiumness)) + geom_boxplot()
 ```
 
+
+
+
+```{r}
+ggplot(data = df_train,aes(x = price,y = Engine_spec6)) + geom_boxplot()
+
+```
+
+```{r}
+keep_numbers_decimals <- function(x) {
+  num_str <- str_extract_all(x, "[0-9.]+")[[1]]
+  num_str <- paste(num_str, collapse = "")
+  as.numeric(num_str)
+}
+
+df_train$Engine_spec1 <- sapply(df_train$Engine_spec1, keep_numbers)
+df_train$Engine_spec1 <- df_train$Engine_spec1/10
+```
+
+
+```{r}
+ggplot(data = df_train,aes(x = premiumness,y = Engine_spec1)) + geom_boxplot()
+
+```
+
