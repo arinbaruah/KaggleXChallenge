@@ -6,6 +6,7 @@ format: html
 
 ```{r}
 library(tidyverse)
+library(naniar)
 ```
 
 ```{r}
@@ -138,17 +139,84 @@ ggplot(data = df_train %>% filter(premiumness != "Luxurious"),aes(y = Engine_spe
 ```
 
 
-```{r}
-df_train <- df_train %>% select(-c(engine,premiumness))
-df_train
-```
+
 
 # Model fit
 
 ## Linear model
 
+
 ```{r}
-linear_model <- lm()
+gg_miss_var(df_train)
+```
+
+
+
+```{r}
+df_train <- df_train %>% select(-c(engine,premiumness,Engine_spec9,Engine_spec8,Engine_spec7,Engine_spec4,clean_title))
+df_train
+```
+
+
+```{r}
+linear_model <- lm(price~ .,data = df_train[,-1] %>% drop_na())
+```
+
+```{r}
+library(broom)
+glance(linear_model)
+```
+
+
+```{r}
+df_test
+```
+# Testing
+
+```{r}
+engine_specs <- str_split(df_test$engine," ") %>% unlist() %>% as.data.frame()
 
 ```
+
+```{r}
+engine_specs <- strsplit(df_test$engine, " ")
+
+max_length <- max(sapply(engine_specs, length))
+
+
+split_df <- as.data.frame(matrix(NA, nrow = nrow(df_test), ncol = max_length))
+
+
+colnames(split_df) <- paste0("Engine_spec", 1:max_length)
+
+for (i in 1:nrow(df_test)) {
+  split_df[i, 1:length(engine_specs[[i]])] <- engine_specs[[i]]
+}
+```
+```{r}
+# Combine the new columns with the original dataframe
+df_test <- bind_cols(df_test, split_df)
+```
+
+```{r}
+df_test <- df_test %>% select(-c(engine,Engine_spec9,Engine_spec8,Engine_spec7,Engine_spec4,Engine_spec8,clean_title))
+df_test
+```
+
+
+
+
+```{r}
+# Combine the new columns with the original dataframe
+df_test <- bind_cols(df_test, split_df)
+```
+
+
+
+```{r}
+predict(linear_model,newdata=df_test %>% filter() %>% drop_na())
+```
+
+
+
 
