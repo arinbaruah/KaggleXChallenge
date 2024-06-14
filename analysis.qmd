@@ -12,6 +12,9 @@ library(tidyverse)
 df_train <- read_csv("data/train.csv")
 df_test <- read_csv("data/test.csv")
 ```
+
+# EDA
+
 ```{r}
 ggplot(data = df_train,aes(y = as.factor(model_year),x = price)) + geom_boxplot()
 ```
@@ -111,7 +114,7 @@ keep_numbers_decimals <- function(x) {
   as.numeric(num_str)
 }
 
-df_train$Engine_spec1 <- sapply(df_train$Engine_spec1, keep_numbers)
+df_train$Engine_spec1 <- sapply(df_train$Engine_spec1, keep_numbers_decimals)
 df_train$Engine_spec1 <- df_train$Engine_spec1/10
 ```
 
@@ -133,3 +136,19 @@ ggplot(data = df_train,aes(y = Engine_spec1,x = price)) + geom_point()
 ```{r}
 ggplot(data = df_train %>% filter(premiumness != "Luxurious"),aes(y = Engine_spec2,x = price)) + geom_boxplot()
 ```
+
+
+```{r}
+df_train <- df_train %>% select(-c(engine,premiumness))
+df_train
+```
+
+# Model fit
+
+## Linear model
+
+```{r}
+linear_model <- lm()
+
+```
+
