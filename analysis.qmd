@@ -151,15 +151,63 @@ gg_miss_var(df_train)
 ```
 
 
+```{r}
+
+df_train <- read_csv("data/train.csv")
+
+engine_specs <- str_split(df_train$engine," ") %>% unlist() %>% as.data.frame()
+
+```
 
 ```{r}
-df_train <- df_train %>% select(-c(engine,premiumness,Engine_spec9,Engine_spec8,Engine_spec7,Engine_spec4,clean_title))
-df_train
+engine_specs <- strsplit(df_train$engine, " ")
+
+max_length <- max(sapply(engine_specs, length))
+
+
+split_df <- as.data.frame(matrix(NA, nrow = nrow(df_train), ncol = max_length))
+
+
+colnames(split_df) <- paste0("Engine_spec", 1:max_length)
+
+for (i in 1:nrow(df_train)) {
+  split_df[i, 1:length(engine_specs[[i]])] <- engine_specs[[i]]
+}
 ```
 
 
 ```{r}
-linear_model <- lm(price~ .,data = df_train[,-1] %>% drop_na())
+# Combine the new columns with the original dataframe
+df_train <- bind_cols(df_train, split_df)
+```
+
+```{r}
+#| warning: false
+
+df_train$Engine_spec1 <- sapply(df_train$Engine_spec1, keep_numbers_decimals)
+df_train$Engine_spec1 <- df_train$Engine_spec1
+
+df_train$Engine_spec2 <- sapply(df_train$Engine_spec2, keep_numbers_decimals)
+df_train$Engine_spec2 <- df_train$Engine_spec2
+
+df_train$Engine_spec3 <- sapply(df_train$Engine_spec3, keep_numbers_decimals)
+df_train$Engine_spec3 <- df_train$Engine_spec3
+
+```
+
+
+
+```{r}
+
+df_train <- df_train %>% select(-c(engine,brand,model,transmission,Engine_spec9,Engine_spec8,Engine_spec7,Engine_spec6,
+                                   Engine_spec4,Engine_spec5,clean_title,int_col,ext_col))
+df_train
+```
+
+
+
+```{r}
+linear_model <- lm(price~ .,data = df_train[,-1])
 ```
 
 ```{r}
@@ -174,6 +222,8 @@ df_test
 # Testing
 
 ```{r}
+
+df_test <- read_csv("data/test.csv")
 engine_specs <- str_split(df_test$engine," ") %>% unlist() %>% as.data.frame()
 
 ```
@@ -193,17 +243,161 @@ for (i in 1:nrow(df_test)) {
   split_df[i, 1:length(engine_specs[[i]])] <- engine_specs[[i]]
 }
 ```
+
+
 ```{r}
 # Combine the new columns with the original dataframe
 df_test <- bind_cols(df_test, split_df)
 ```
 
 ```{r}
-df_test <- df_test %>% select(-c(engine,Engine_spec9,Engine_spec8,Engine_spec7,Engine_spec4,Engine_spec8,clean_title))
+#| warning: false
+df_test$Engine_spec1 <- sapply(df_test$Engine_spec1, keep_numbers_decimals)
+df_test$Engine_spec1 <- df_test$Engine_spec1
+
+df_test$Engine_spec2 <- sapply(df_test$Engine_spec2, keep_numbers_decimals)
+df_test$Engine_spec2 <- df_test$Engine_spec2
+
+df_test$Engine_spec3 <- sapply(df_test$Engine_spec3, keep_numbers_decimals)
+df_test$Engine_spec3 <- df_test$Engine_spec3
+
+```
+
+
+
+
+
+```{r}
+df_test <- df_test %>% select(-c(engine,brand,model,transmission,Engine_spec9,Engine_spec8,Engine_spec7,Engine_spec6,
+                                   Engine_spec4,Engine_spec5,clean_title,int_col,ext_col))
+
 df_test
 ```
 
 
+```{r}
+
+linear_preds <- tibble(id = df_test$id,
+  price = predict(linear_model,newdata=df_test))
+
+linear_preds <- linear_preds %>% mutate(across(price, ~replace_na(., median(., na.rm=TRUE))))
+
+write_csv(linear_preds, file="predictions1.csv")
+```
+
+
+# Adding transmission info
+
+
+```{r}
+
+df_train <- read_csv("data/train.csv")
+
+engine_specs <- str_split(df_train$engine," ") %>% unlist() %>% as.data.frame()
+
+```
+
+```{r}
+engine_specs <- strsplit(df_train$engine, " ")
+
+max_length <- max(sapply(engine_specs, length))
+
+
+split_df <- as.data.frame(matrix(NA, nrow = nrow(df_train), ncol = max_length))
+
+
+colnames(split_df) <- paste0("Engine_spec", 1:max_length)
+
+for (i in 1:nrow(df_train)) {
+  split_df[i, 1:length(engine_specs[[i]])] <- engine_specs[[i]]
+}
+```
+
+
+```{r}
+# Combine the new columns with the original dataframe
+df_train <- bind_cols(df_train, split_df)
+```
+
+```{r}
+#| warning: false
+
+df_train$Engine_spec1 <- sapply(df_train$Engine_spec1, keep_numbers_decimals)
+df_train$Engine_spec1 <- df_train$Engine_spec1
+
+df_train$Engine_spec2 <- sapply(df_train$Engine_spec2, keep_numbers_decimals)
+df_train$Engine_spec2 <- df_train$Engine_spec2
+
+df_train$Engine_spec3 <- sapply(df_train$Engine_spec3, keep_numbers_decimals)
+df_train$Engine_spec3 <- df_train$Engine_spec3
+
+```
+
+
+
+
+
+```{r}
+df_train <- df_train %>% mutate(transmission_group = case_when(
+                                                   str_detect(transmission,"1-Speed") ~ "1 speed Automatic",
+                                                   str_detect(transmission,"2-Speed") ~ "2 speed Automatic",
+                                                   str_detect(transmission,"3-Speed") ~ "3 speed Automatic",
+                                                   str_detect(transmission,"4-Speed") ~ "4 speed Automatic",
+                                                   str_detect(transmission,"5-Speed") ~ "5 speed Automatic",
+                                                   str_detect(transmission,"6-Speed") ~ "6 speed Automatic",
+                                                   str_detect(transmission,"7-Speed") ~ "7 speed Automatic",
+                                                   str_detect(transmission,"8-Speed") ~ "8 speed Automatic",
+                                                   str_detect(transmission,"9-Speed") ~ "9 speed Automatic",
+                                                   str_detect(transmission,"10-Speed") ~ "10 speed Automatic",
+                                                   str_detect(transmission,"M/T") ~ "Manual",
+                                                   str_detect(transmission,"mt") ~ "Manual",
+                                                   str_detect(transmission,"Automatic") ~ "Automatic",
+                                                   str_detect(transmission,"Manual") ~ "Manual",
+                                                   str_detect(transmission,"CVT") ~ "CVT",
+                                                   str_detect(transmission,"Variable") ~ "CVT",
+                                                   str_detect(transmission,"Transmission w/Dual Shift Mode") ~ "Auto-manual",
+                                                   str_detect(transmission,"Transmission Overdrive Switch") ~ "Automatic",
+                                                   str_detect(transmission,"DCT") ~ "Auto-manual",
+                                                   .default = "Uncategorised")
+                                                   )
+```
+
+
+
+```{r}
+df_train <- df_train %>% select(-c(engine,brand,model,transmission,Engine_spec9,Engine_spec8,Engine_spec7,Engine_spec6,
+                                   Engine_spec4,Engine_spec5,clean_title,int_col,ext_col))
+df_train
+```
+
+```{r}
+linear_model <- lm(price~ .,data = df_train[,-1])
+```
+
+
+
+```{r}
+
+df_test <- read_csv("data/test.csv")
+engine_specs <- str_split(df_test$engine," ") %>% unlist() %>% as.data.frame()
+
+```
+
+```{r}
+engine_specs <- strsplit(df_test$engine, " ")
+
+max_length <- max(sapply(engine_specs, length))
+
+
+split_df <- as.data.frame(matrix(NA, nrow = nrow(df_test), ncol = max_length))
+
+
+colnames(split_df) <- paste0("Engine_spec", 1:max_length)
+
+for (i in 1:nrow(df_test)) {
+  split_df[i, 1:length(engine_specs[[i]])] <- engine_specs[[i]]
+}
+```
 
 
 ```{r}
@@ -211,12 +405,64 @@ df_test
 df_test <- bind_cols(df_test, split_df)
 ```
 
-
-
 ```{r}
-predict(linear_model,newdata=df_test %>% filter() %>% drop_na())
+#| warning: false
+df_test$Engine_spec1 <- sapply(df_test$Engine_spec1, keep_numbers_decimals)
+df_test$Engine_spec1 <- df_test$Engine_spec1
+
+df_test$Engine_spec2 <- sapply(df_test$Engine_spec2, keep_numbers_decimals)
+df_test$Engine_spec2 <- df_test$Engine_spec2
+
+df_test$Engine_spec3 <- sapply(df_test$Engine_spec3, keep_numbers_decimals)
+df_test$Engine_spec3 <- df_test$Engine_spec3
+
 ```
 
 
 
+
+```{r}
+df_test <- df_test %>% mutate(transmission_group = case_when(
+                                                   str_detect(transmission,"1-Speed") ~ "1 speed Automatic",
+                                                   str_detect(transmission,"2-Speed") ~ "2 speed Automatic",
+                                                   str_detect(transmission,"3-Speed") ~ "3 speed Automatic",
+                                                   str_detect(transmission,"4-Speed") ~ "4 speed Automatic",
+                                                   str_detect(transmission,"5-Speed") ~ "5 speed Automatic",
+                                                   str_detect(transmission,"6-Speed") ~ "6 speed Automatic",
+                                                   str_detect(transmission,"7-Speed") ~ "7 speed Automatic",
+                                                   str_detect(transmission,"8-Speed") ~ "8 speed Automatic",
+                                                   str_detect(transmission,"9-Speed") ~ "9 speed Automatic",
+                                                   str_detect(transmission,"10-Speed") ~ "10 speed Automatic",
+                                                   str_detect(transmission,"M/T") ~ "Manual",
+                                                   str_detect(transmission,"mt") ~ "Manual",
+                                                   str_detect(transmission,"Automatic") ~ "Automatic",
+                                                   str_detect(transmission,"Manual") ~ "Manual",
+                                                   str_detect(transmission,"CVT") ~ "CVT",
+                                                   str_detect(transmission,"Variable") ~ "CVT",
+                                                   str_detect(transmission,"Transmission w/Dual Shift Mode") ~ "Auto-manual",
+                                                   str_detect(transmission,"Transmission Overdrive Switch") ~ "Automatic",
+                                                   str_detect(transmission,"DCT") ~ "Auto-manual",
+                                                   .default = "Uncategorised")
+                                                   )
+```
+
+
+
+```{r}
+df_test <- df_test %>% select(-c(engine,brand,model,transmission,Engine_spec9,Engine_spec8,Engine_spec7,Engine_spec6,
+                                   Engine_spec4,Engine_spec5,clean_title,int_col,ext_col))
+
+df_test
+```
+
+
+```{r}
+
+linear_preds <- tibble(id = df_test$id,
+  price = predict(linear_model,newdata=df_test))
+
+linear_preds <- linear_preds %>% mutate(across(price, ~replace_na(., median(., na.rm=TRUE))))
+
+write_csv(linear_preds, file="predictions3.csv")
+```
 
