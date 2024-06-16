@@ -56,7 +56,7 @@ ggplot(data = df_train,aes(y = ext_col,x = price)) + geom_boxplot()
 
 
 ```{r}
-ggplot(data = df_train,aes(y = brand,x = price)) + geom_boxplot()
+ggplot(data = df_train %>% filter(price < 50000),aes(y = brand,x = price)) + geom_boxplot()
 ```
 
 ```{r}
@@ -229,6 +229,8 @@ df_test
 df_test <- read_csv("data/test.csv")
 engine_specs <- str_split(df_test$engine," ") %>% unlist() %>% as.data.frame()
 
+df_test$model_year <-as.Date(paste0(df_test$model_year,"-01-01"))
+
 ```
 
 ```{r}
@@ -301,7 +303,7 @@ write_csv(linear_preds, file="predictions1.csv")
 df_train <- read_csv("data/train.csv")
 
 engine_specs <- str_split(df_train$engine," ") %>% unlist() %>% as.data.frame()
-
+df_train$model_year <- as.Date(paste0(df_train$model_year,"-01-01"))
 ```
 
 ```{r}
@@ -374,6 +376,8 @@ df_train <- df_train %>% mutate(transmission_group = case_when(
 
 ## ext_col
 
+(Marginally reduced accuracy)
+
 ```{r}
 df_train <- df_train %>% mutate(ext_color_group = case_when(
                                                    str_detect(ext_col,"Metallic") ~ "Metallic",
@@ -395,6 +399,8 @@ df_train <- df_train %>% mutate(ext_color_group = case_when(
 ```
 
 ## int_col
+
+(Reduced accuracy)
 
 ```{r}
 df_train <- df_train %>% mutate(int_color_group = case_when(
@@ -418,13 +424,30 @@ df_train <- df_train %>% mutate(int_color_group = case_when(
 ```
 
 
+# Aggregating brands
+
+```{r}
+
+df_train <- df_train %>% mutate(premiumness = case_when(price > 10^6 ~ "Luxurious",
+                                                        price < 10^6 & price >250000 ~ "Premium",
+                                                        price > 80000 & price <= 250000 ~ "Mid range",
+                                                        
+                                                        price <= 80000 ~ "General"))
+
+luxurious_brands <- df_train %>% filter(premiumness == "Luxurious") %>% select(brand)
+
+df_train <- df_train %>% mutate(brand_agg = if_else(brand %in% luxurious_brands$brand,"Luxurious","Not Luxurious"))
+```
+
+
 ```{r}
 df_train <- df_train %>% select(-c(engine,brand,model,transmission,Engine_spec9,Engine_spec8,Engine_spec7,Engine_spec6,
-                                   Engine_spec4,Engine_spec5,clean_title,int_col,ext_col))
+                                   Engine_spec4,Engine_spec5,clean_title,int_col,ext_col,premiumness))
 df_train
 ```
+
 ```{r}
-df_train <- df_train <- df_train %>%
+df_train <- df_train %>%
   mutate(across(c(Engine_spec1, Engine_spec2, Engine_spec3), ~ replace_na(., median(., na.rm = TRUE))))
 ```
 
@@ -551,6 +574,12 @@ df_test <- df_test %>% mutate(int_color_group = case_when(
                                                    )
 ```
 
+
+```{r}
+df_test <- df_test %>% mutate(brand_agg = if_else(brand %in% luxurious_brands$brand,"Luxurious","Not Luxurious"))
+```
+
+
 ```{r}
 df_test  <- df_test %>%
   mutate(across(c(Engine_spec1, Engine_spec2, Engine_spec3), ~ replace_na(., median(., na.rm = TRUE))))
@@ -572,7 +601,7 @@ linear_preds <- tibble(id = df_test$id,
 
 linear_preds <- linear_preds %>% mutate(across(price, ~replace_na(., median(., na.rm=TRUE))))
 
-write_csv(linear_preds, file="predictions4.csv")
+write_csv(linear_preds, file="predictions9.csv")
 ```
 
 # Random forest
@@ -580,7 +609,8 @@ write_csv(linear_preds, file="predictions4.csv")
 ```{r}
 library(randomForest)
 
-rf_model <- randomForest(price ~ ., data = df_train, ntree = 500, mtry = 3, importance = TRUE)
+rf_model <- randomForest(price ~ ., data = df_train, ntree = 500, 
+                         mtry = 3,min_n = 2, importance = TRUE)
 ```
 
 
@@ -591,7 +621,7 @@ rf_preds <- tibble(id = df_test$id,
 
 rf_preds <- rf_preds %>% mutate(across(price, ~replace_na(., median(., na.rm=TRUE))))
 
-write_csv(rf_preds, file="predictions6.csv")
+write_csv(rf_preds, file="predictions8.csv")
 ```
 
 
@@ -608,6 +638,7 @@ xgb_spec <- boost_tree(min_n = 4) |>
 xgb_model <- xgb_spec |> 
   fit(price~ ., data = df_train %>% select(-id))
 ```
+
 
 
 ```{r}
