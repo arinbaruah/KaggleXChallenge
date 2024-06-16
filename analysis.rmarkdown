@@ -14,7 +14,9 @@ df_train <- read_csv("data/train.csv")
 df_test <- read_csv("data/test.csv")
 ```
 
+
 # EDA
+
 
 ```{r}
 ggplot(data = df_train,aes(y = as.factor(model_year),x = price)) + geom_boxplot()
@@ -28,32 +30,25 @@ ggplot(data = df_train,aes(y = milage,x = price)) + geom_point()
 ggplot(data = df_train ,aes(y = fuel_type,x = price)) + geom_boxplot()
 ```
 
-
 ```{r}
 ggplot(data = df_train %>% filter(price < 10^6),aes(y = int_col,x = price)) + geom_boxplot()
 ```
-
 
 ```{r}
 ggplot(data = df_train %>% filter(price < 10^6),aes(y = accident,x = price)) + geom_boxplot()
 ```
 
-
 ```{r}
 ggplot(data = df_train %>% filter(price < 10^6),aes(y = transmission,x = price)) + geom_boxplot()
 ```
 
-
 ```{r}
 ggplot(data = df_train,aes(y = ext_col,x = price)) + geom_boxplot()
 ```
 
-
 ```{r}
 ggplot(data = df_train,aes(y = ext_col,x = price)) + geom_boxplot()
 ```
-
-
 
 ```{r}
 ggplot(data = df_train,aes(y = brand,x = price)) + geom_boxplot()
@@ -80,12 +75,10 @@ for (i in 1:nrow(df_train)) {
 }
 ```
 
-
 ```{r}
 # Combine the new columns with the original dataframe
 df_train <- bind_cols(df_train, split_df)
 ```
-
 
 ```{r}
 df_train <- df_train %>% mutate(premiumness = case_when(price > 10^6 ~ "Luxurious",
@@ -95,13 +88,9 @@ df_train <- df_train %>% mutate(premiumness = case_when(price > 10^6 ~ "Luxuriou
                                                         price <= 80000 ~ "General"))
 ```
 
-
 ```{r}
 ggplot(data = df_train,aes(y = price,x = premiumness)) + geom_boxplot()
 ```
-
-
-
 
 ```{r}
 ggplot(data = df_train,aes(x = price,y = Engine_spec6)) + geom_boxplot()
@@ -119,7 +108,6 @@ df_train$Engine_spec1 <- sapply(df_train$Engine_spec1, keep_numbers_decimals)
 df_train$Engine_spec1 <- df_train$Engine_spec1/10
 ```
 
-
 ```{r}
 ggplot(data = df_train,aes(x = premiumness,y = Engine_spec1)) + geom_boxplot()
 
@@ -134,9 +122,11 @@ ggplot(df_group_brand,aes(x = reorder(brand,Total),y = Total,fill = premiumness)
 ```{r}
 ggplot(data = df_train,aes(y = Engine_spec1,x = price)) + geom_point()
 ```
+
 ```{r}
 ggplot(data = df_train %>% filter(premiumness != "Luxurious"),aes(y = Engine_spec2,x = price)) + geom_boxplot()
 ```
+
 
 
 
@@ -146,12 +136,12 @@ ggplot(data = df_train %>% filter(premiumness != "Luxurious"),aes(y = Engine_spe
 ## Linear model
 
 
+
 ```{r}
 
 gg_miss_var(df_train)
 
 ```
-
 
 ```{r}
 
@@ -176,7 +166,6 @@ for (i in 1:nrow(df_train)) {
 }
 ```
 
-
 ```{r}
 # Combine the new columns with the original dataframe
 df_train <- bind_cols(df_train, split_df)
@@ -196,8 +185,6 @@ df_train$Engine_spec3 <- df_train$Engine_spec3
 
 ```
 
-
-
 ```{r}
 
 df_train <- df_train %>% select(-c(engine,brand,model,transmission,Engine_spec9,Engine_spec8,Engine_spec7,Engine_spec6,
@@ -205,14 +192,9 @@ df_train <- df_train %>% select(-c(engine,brand,model,transmission,Engine_spec9,
 df_train
 ```
 
-
-
 ```{r}
 linear_model <- lm(price~ .,data = df_train[,-1])
 ```
-
-
-
 
 ```{r}
 library(broom)
@@ -222,7 +204,9 @@ glance(linear_model)
 ```{r}
 df_test
 ```
+
 # Testing
+
 
 ```{r}
 
@@ -247,15 +231,10 @@ for (i in 1:nrow(df_test)) {
 }
 ```
 
-
-
 ```{r}
 # Combine the new columns with the original dataframe
 df_test <- bind_cols(df_test, split_df)
 ```
-
-
-
 
 ```{r}
 #| warning: false
@@ -270,8 +249,6 @@ df_test$Engine_spec3 <- df_test$Engine_spec3
 
 ```
 
-
-
 ```{r}
 df_test <- df_test %>% select(-c(engine,brand,model,transmission,Engine_spec9,
                                  Engine_spec8,Engine_spec7,Engine_spec6,
@@ -280,7 +257,6 @@ df_test <- df_test %>% select(-c(engine,brand,model,transmission,Engine_spec9,
 
 df_test
 ```
-
 
 ```{r}
 
@@ -293,7 +269,9 @@ write_csv(linear_preds, file="predictions1.csv")
 ```
 
 
+
 # Adding transmission info
+
 
 
 ```{r}
@@ -320,7 +298,6 @@ for (i in 1:nrow(df_train)) {
 }
 ```
 
-
 ```{r}
 # Combine the new columns with the original dataframe
 df_train <- bind_cols(df_train, split_df)
@@ -339,10 +316,6 @@ df_train$Engine_spec3 <- sapply(df_train$Engine_spec3, keep_numbers_decimals)
 df_train$Engine_spec3 <- df_train$Engine_spec3
 
 ```
-
-
-
-
 
 ```{r}
 df_train <- df_train %>% mutate(transmission_group = case_when(
@@ -370,9 +343,9 @@ df_train <- df_train %>% mutate(transmission_group = case_when(
 ```
 
 
+
 # Including color information
 
-## ext_col
 
 ```{r}
 df_train <- df_train %>% mutate(ext_color_group = case_when(
@@ -388,53 +361,24 @@ df_train <- df_train %>% mutate(ext_color_group = case_when(
                                                    str_detect(ext_col,"Pearl") ~ "Pearlscent",
                                                    str_detect(ext_col,"Orange") ~ "Orange",
                                                    str_detect(ext_col,"Blue") ~ "Blue",
-                                                   str_detect(int_col,"Gold") ~ "Gold",
-                                                   str_detect(int_col,"Brown") ~ "Brown",
                                                    .default = "Uncategorised")
                                                    )
 ```
-
-## int_col
-
-```{r}
-df_train <- df_train %>% mutate(int_color_group = case_when(
-                                                   str_detect(int_col,"Metallic") ~ "Metallic",
-                                                   str_detect(int_col,"Magnetic") ~ "Magnetic",
-                                                   str_detect(int_col,"White") ~ "White",
-                                                   str_detect(int_col,"Green") ~ "Green",
-                                                   str_detect(int_col,"Gray") ~ "Gray",
-                                                   str_detect(int_col,"Silver") ~ "Silver",
-                                                   str_detect(int_col,"Black") ~ "Black",
-                                                   str_detect(int_col,"Purple") ~ "Purple",
-                                                   str_detect(int_col,"Red") ~ "Red",
-                                                   str_detect(int_col,"Pearl") ~ "Pearlscent",
-                                                   str_detect(int_col,"Orange") ~ "Orange",
-                                                   str_detect(int_col,"Blue") ~ "Blue",
-                                                   str_detect(int_col,"Beige") ~ "Beige",
-                                                   str_detect(int_col,"Gold") ~ "Gold",
-                                                   str_detect(int_col,"Brown") ~ "Brown",
-                                                   .default = "Uncategorised")
-                                                   )
-```
-
 
 ```{r}
 df_train <- df_train %>% select(-c(engine,brand,model,transmission,Engine_spec9,Engine_spec8,Engine_spec7,Engine_spec6,
                                    Engine_spec4,Engine_spec5,clean_title,int_col,ext_col))
 df_train
 ```
+
 ```{r}
 df_train <- df_train <- df_train %>%
   mutate(across(c(Engine_spec1, Engine_spec2, Engine_spec3), ~ replace_na(., median(., na.rm = TRUE))))
 ```
 
-
-
 ```{r}
 linear_model <- lm(price~ .,data = df_train[,-1])
 ```
-
-
 
 ```{r}
 
@@ -459,12 +403,10 @@ for (i in 1:nrow(df_test)) {
 }
 ```
 
-
 ```{r}
 # Combine the new columns with the original dataframe
 df_test <- bind_cols(df_test, split_df)
 ```
-
 
 ```{r}
 #| warning: false
@@ -478,9 +420,6 @@ df_test$Engine_spec3 <- sapply(df_test$Engine_spec3, keep_numbers_decimals)
 df_test$Engine_spec3 <- df_test$Engine_spec3
 
 ```
-
-
-
 
 ```{r}
 df_test <- df_test %>% mutate(transmission_group = case_when(
@@ -508,7 +447,9 @@ df_test <- df_test %>% mutate(transmission_group = case_when(
 ```
 
 
+
 # Including color information
+
 
 ```{r}
 df_test <- df_test %>% mutate(ext_color_group = case_when(
@@ -524,29 +465,6 @@ df_test <- df_test %>% mutate(ext_color_group = case_when(
                                                    str_detect(ext_col,"Pearl") ~ "Pearlscent",
                                                    str_detect(ext_col,"Orange") ~ "Orange",
                                                    str_detect(ext_col,"Blue") ~ "Blue",
-                                                   str_detect(int_col,"Gold") ~ "Gold",
-                                                   str_detect(int_col,"Brown") ~ "Brown",
-                                                   .default = "Uncategorised")
-                                                   )
-```
-
-```{r}
-df_test <- df_test %>% mutate(int_color_group = case_when(
-                                                   str_detect(int_col,"Metallic") ~ "Metallic",
-                                                   str_detect(int_col,"Magnetic") ~ "Magnetic",
-                                                   str_detect(int_col,"White") ~ "White",
-                                                   str_detect(int_col,"Green") ~ "Green",
-                                                   str_detect(int_col,"Gray") ~ "Gray",
-                                                   str_detect(int_col,"Silver") ~ "Silver",
-                                                   str_detect(int_col,"Black") ~ "Black",
-                                                   str_detect(int_col,"Purple") ~ "Purple",
-                                                   str_detect(int_col,"Red") ~ "Red",
-                                                   str_detect(int_col,"Pearl") ~ "Pearlscent",
-                                                   str_detect(int_col,"Orange") ~ "Orange",
-                                                   str_detect(int_col,"Blue") ~ "Blue",
-                                                   str_detect(int_col,"Beige") ~ "Beige",
-                                                   str_detect(int_col,"Gold") ~ "Gold",
-                                                   str_detect(int_col,"Brown") ~ "Brown",
                                                    .default = "Uncategorised")
                                                    )
 ```
@@ -556,14 +474,12 @@ df_test  <- df_test %>%
   mutate(across(c(Engine_spec1, Engine_spec2, Engine_spec3), ~ replace_na(., median(., na.rm = TRUE))))
 ```
 
-
 ```{r}
 df_test <- df_test %>% select(-c(engine,brand,model,transmission,Engine_spec9,Engine_spec8,Engine_spec7,Engine_spec6,
                                    Engine_spec4,Engine_spec5,clean_title,int_col,ext_col))
 
 df_test
 ```
-
 
 ```{r}
 
@@ -575,7 +491,9 @@ linear_preds <- linear_preds %>% mutate(across(price, ~replace_na(., median(., n
 write_csv(linear_preds, file="predictions4.csv")
 ```
 
+
 # Random forest
+
 
 ```{r}
 library(randomForest)
@@ -583,41 +501,12 @@ library(randomForest)
 rf_model <- randomForest(price ~ ., data = df_train, ntree = 500, mtry = 3, importance = TRUE)
 ```
 
-
-
 ```{r}
 rf_preds <- tibble(id = df_test$id,
   price = predict(rf_model,newdata=df_test))
 
 rf_preds <- rf_preds %>% mutate(across(price, ~replace_na(., median(., na.rm=TRUE))))
 
-write_csv(rf_preds, file="predictions6.csv")
+write_csv(linear_preds, file="predictions5.csv")
 ```
-
-
-# XGboost 
-
-```{r}
-library(xgboost)
-library(tidymodels)
-
-xgb_spec <- boost_tree(min_n = 4) |>
-  set_mode("regression") |>
-  set_engine("xgboost")
-
-xgb_model <- xgb_spec |> 
-  fit(price~ ., data = df_train %>% select(-id))
-```
-
-
-```{r}
-xgb_preds <- tibble(id = df_test$id,
-  price = predict(xgb_model,new_data=df_test)$.pred)
-
-xgb_preds <- xgb_preds %>% mutate(across(price, ~replace_na(., median(., na.rm=TRUE))))
-
-write_csv(xgb_preds, file="predictions7.csv")
-```
-
-
 
