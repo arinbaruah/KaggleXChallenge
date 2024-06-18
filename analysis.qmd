@@ -436,7 +436,9 @@ df_train <- df_train %>% mutate(premiumness = case_when(price > 10^6 ~ "Luxuriou
 
 luxurious_brands <- df_train %>% filter(premiumness == "Luxurious") %>% select(brand)
 
-df_train <- df_train %>% mutate(brand_agg = if_else(brand %in% luxurious_brands$brand,"Luxurious","Not Luxurious"))
+
+df_train <- df_train %>% mutate(brand_luxury= if_else(brand %in% luxurious_brands$brand,"Luxurious","Not Luxurious"))
+
 ```
 
 
@@ -454,6 +456,8 @@ df_train <- df_train %>%
 
 
 ```{r}
+df_train <- df_train %>% drop_na()
+
 linear_model <- lm(price~ .,data = df_train[,-1])
 ```
 
@@ -463,6 +467,7 @@ linear_model <- lm(price~ .,data = df_train[,-1])
 
 df_test <- read_csv("data/test.csv")
 engine_specs <- str_split(df_test$engine," ") %>% unlist() %>% as.data.frame()
+df_test$model_year <- as.Date(paste0(df_test$model_year,"-01-01"))
 
 ```
 
@@ -576,7 +581,10 @@ df_test <- df_test %>% mutate(int_color_group = case_when(
 
 
 ```{r}
-df_test <- df_test %>% mutate(brand_agg = if_else(brand %in% luxurious_brands$brand,"Luxurious","Not Luxurious"))
+
+
+df_test <- df_test %>% mutate(brand_luxury = if_else(brand %in% luxurious_brands$brand,"Luxurious","Not Luxurious"))
+
 ```
 
 
@@ -595,13 +603,12 @@ df_test
 
 
 ```{r}
-
 linear_preds <- tibble(id = df_test$id,
   price = predict(linear_model,newdata=df_test))
 
 linear_preds <- linear_preds %>% mutate(across(price, ~replace_na(., median(., na.rm=TRUE))))
 
-write_csv(linear_preds, file="predictions9.csv")
+write_csv(linear_preds, file="predictions15.csv")
 ```
 
 # Random forest
@@ -621,7 +628,7 @@ rf_preds <- tibble(id = df_test$id,
 
 rf_preds <- rf_preds %>% mutate(across(price, ~replace_na(., median(., na.rm=TRUE))))
 
-write_csv(rf_preds, file="predictions8.csv")
+write_csv(rf_preds, file="predictions10.csv")
 ```
 
 
@@ -647,7 +654,7 @@ xgb_preds <- tibble(id = df_test$id,
 
 xgb_preds <- xgb_preds %>% mutate(across(price, ~replace_na(., median(., na.rm=TRUE))))
 
-write_csv(xgb_preds, file="predictions7.csv")
+write_csv(xgb_preds, file="predictions12.csv")
 ```
 
 
