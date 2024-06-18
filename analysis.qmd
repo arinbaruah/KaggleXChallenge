@@ -435,9 +435,10 @@ df_train <- df_train %>% mutate(premiumness = case_when(price > 10^6 ~ "Luxuriou
                                                         price <= 80000 ~ "General"))
 
 luxurious_brands <- df_train %>% filter(premiumness == "Luxurious") %>% select(brand)
+general_brands <- df_train %>% filter(premiumness == "General") %>% select(brand)
 
-
-df_train <- df_train %>% mutate(brand_luxury= if_else(brand %in% luxurious_brands$brand,"Luxurious","Not Luxurious"))
+#df_train <- df_train %>% mutate(brand_luxury= if_else(brand %in% luxurious_brands$brand,"Luxurious","Not Luxurious"))
+df_train <- df_train %>% mutate(brand_general= if_else(brand %in% luxurious_brands$brand,"General","Not General"))
 
 ```
 
@@ -456,9 +457,9 @@ df_train <- df_train %>%
 
 
 ```{r}
-df_train <- df_train %>% drop_na()
+df_train <- df_train %>% filter(price < 10^6)
 
-linear_model <- lm(price~ .,data = df_train[,-1])
+linear_model <- lm(price ~ ., data = df_train[,-1])
 ```
 
 
@@ -552,8 +553,8 @@ df_test <- df_test %>% mutate(ext_color_group = case_when(
                                                    str_detect(ext_col,"Pearl") ~ "Pearlscent",
                                                    str_detect(ext_col,"Orange") ~ "Orange",
                                                    str_detect(ext_col,"Blue") ~ "Blue",
-                                                   str_detect(int_col,"Gold") ~ "Gold",
-                                                   str_detect(int_col,"Brown") ~ "Brown",
+                                                   str_detect(ext_col,"Gold") ~ "Gold",
+                                                   str_detect(ext_col,"Brown") ~ "Brown",
                                                    .default = "Uncategorised")
                                                    )
 ```
@@ -583,8 +584,8 @@ df_test <- df_test %>% mutate(int_color_group = case_when(
 ```{r}
 
 
-df_test <- df_test %>% mutate(brand_luxury = if_else(brand %in% luxurious_brands$brand,"Luxurious","Not Luxurious"))
-
+#df_test <- df_test %>% mutate(brand_luxury = if_else(brand %in% luxurious_brands$brand,"Luxurious","Not Luxurious"))
+df_test <- df_test %>% mutate(brand_general= if_else(brand %in% luxurious_brands$brand,"General","Not General"))
 ```
 
 
@@ -608,7 +609,7 @@ linear_preds <- tibble(id = df_test$id,
 
 linear_preds <- linear_preds %>% mutate(across(price, ~replace_na(., median(., na.rm=TRUE))))
 
-write_csv(linear_preds, file="predictions15.csv")
+write_csv(linear_preds, file="predictions17.csv")
 ```
 
 # Random forest
@@ -658,4 +659,11 @@ write_csv(xgb_preds, file="predictions12.csv")
 ```
 
 
+```{r}
+preds <- tibble(id = df_train$id,
+                pred_price =  predict(linear_model,new_data=df_train),
+                actual_price = df_train$price)
+
+ggplot(data = preds,aes(x = pred_price,y = actual_price)) + geom_point() + geom_smooth(method = "lm")
+```
 
