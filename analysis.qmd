@@ -453,9 +453,7 @@ df_train <- df_train %>% mutate(brand_general= if_else(brand %in% luxurious_bran
 
 ```
 
-```{r}
-ggplot(data = df_train %>% filter(price > 10^6),aes(y = model,x = price)) + geom_boxplot()
-```
+
 # Adding model information
 
 ```{r}
@@ -495,7 +493,7 @@ df_train <- df_train %>%
 
 
 ```{r}
-df_train <- df_train %>% filter(price < 10^6)
+
 
 linear_model <- lm(price ~ ., data = df_train[,-1])
 ```
@@ -699,6 +697,8 @@ write_csv(rf_preds, file="predictions19.csv")
 library(xgboost)
 library(tidymodels)
 
+df_train <- df_train %>% filter(price < 10^6)
+
 xgb_spec <- boost_tree(min_n = 4) |>
   set_mode("regression") |>
   set_engine("xgboost")
@@ -710,20 +710,21 @@ xgb_model <- xgb_spec |>
 
 
 ```{r}
+
 xgb_preds <- tibble(id = df_test$id,
   price = predict(xgb_model,new_data=df_test)$.pred)
 
 xgb_preds <- xgb_preds %>% mutate(across(price, ~replace_na(., median(., na.rm=TRUE))))
 
-write_csv(xgb_preds, file="predictions21.csv")
+write_csv(xgb_preds, file="predictions23.csv")
 ```
 
 
 ```{r}
 preds <- tibble(id = df_train$id,
-                pred_price =  predict(linear_model,new_data=df_train),
+                pred_price =  predict(xgb_model,new_data=df_train)$.pred,
                 actual_price = df_train$price)
 
-ggplot(data = preds,aes(x = pred_price,y = actual_price)) + geom_point() + geom_smooth(method = "lm")
+ggplot(data = preds,aes(x = log(pred_price),y = log(actual_price))) + geom_point() + geom_smooth() + coord_fixed(ratio = 1)
 ```
 
