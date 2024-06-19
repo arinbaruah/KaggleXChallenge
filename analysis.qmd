@@ -56,7 +56,7 @@ ggplot(data = df_train,aes(y = ext_col,x = price)) + geom_boxplot()
 
 
 ```{r}
-ggplot(data = df_train %>% filter(price < 50000),aes(y = brand,x = price)) + geom_boxplot()
+ggplot(data = df_train %>% filter(price > 10^6),aes(y = model,x = price)) + geom_boxplot()
 ```
 
 ```{r}
@@ -158,6 +158,8 @@ gg_miss_var(df_train)
 df_train <- read_csv("data/train.csv")
 
 engine_specs <- str_split(df_train$engine," ") %>% unlist() %>% as.data.frame()
+
+df_train <- df_train %>% filter(model_year>1974)
 
 ```
 
@@ -295,6 +297,13 @@ write_csv(linear_preds, file="predictions1.csv")
 ```
 
 
+
+
+
+---- Standalone -----
+
+
+
 # Adding transmission info
 
 
@@ -304,6 +313,8 @@ df_train <- read_csv("data/train.csv")
 
 engine_specs <- str_split(df_train$engine," ") %>% unlist() %>% as.data.frame()
 df_train$model_year <- as.Date(paste0(df_train$model_year,"-01-01"))
+
+df_train <- df_train %>% filter(model_year > 1974)
 ```
 
 ```{r}
@@ -441,6 +452,33 @@ general_brands <- df_train %>% filter(premiumness == "General") %>% select(brand
 df_train <- df_train %>% mutate(brand_general= if_else(brand %in% luxurious_brands$brand,"General","Not General"))
 
 ```
+
+```{r}
+ggplot(data = df_train %>% filter(price > 10^6),aes(y = model,x = price)) + geom_boxplot()
+```
+# Adding model information
+
+```{r}
+df_train <- df_train %>% mutate(luxury_models = case_when(
+                                                   str_detect(model,"Carrera") ~ "Luxury",
+                                                   str_detect(model,"SL") ~ "Luxury",
+                                                   str_detect(model,"Corvette") ~ "Luxury",
+                                                   str_detect(model,"AMG") ~ "Luxury",
+                                                   str_detect(model,"S-Class") ~ "Luxury",
+                                                   str_detect(model,"Sierra 1500") ~ "Luxury",
+                                                   str_detect(model,"Cayenne") ~ "Luxury",
+                                                   str_detect(model,"R8") ~ "Luxury",
+                                                   str_detect(model,"A7") ~ "Luxury",
+                                                   str_detect(model,"Tahoe") ~ "Luxury",
+                                                   str_detect(model,"Tacoma") ~ "Luxury",
+                                                   str_detect(model,"E-class") ~ "Luxury",
+                                                   str_detect(model,"911") ~ "Luxury",
+                                                   str_detect(model,"570S") ~ "Luxury",
+                                                   str_detect(model,"Laramie") ~ "Luxury",
+                                                   .default = "Non Luxury")
+                                                   )
+```
+
 
 
 ```{r}
@@ -582,6 +620,28 @@ df_test <- df_test %>% mutate(int_color_group = case_when(
 
 
 ```{r}
+df_test <- df_test %>% mutate(luxury_models = case_when(
+                                                   str_detect(model,"Carrera") ~ "Luxury",
+                                                   str_detect(model,"SL") ~ "Luxury",
+                                                   str_detect(model,"Corvette") ~ "Luxury",
+                                                   str_detect(model,"AMG") ~ "Luxury",
+                                                   str_detect(model,"S-Class") ~ "Luxury",
+                                                   str_detect(model,"Sierra 1500") ~ "Luxury",
+                                                   str_detect(model,"Cayenne") ~ "Luxury",
+                                                   str_detect(model,"R8") ~ "Luxury",
+                                                   str_detect(model,"A7") ~ "Luxury",
+                                                   str_detect(model,"Tahoe") ~ "Luxury",
+                                                   str_detect(model,"Tacoma") ~ "Luxury",
+                                                   str_detect(model,"E-class") ~ "Luxury",
+                                                   str_detect(model,"911") ~ "Luxury",
+                                                   str_detect(model,"570S") ~ "Luxury",
+                                                   str_detect(model,"Laramie") ~ "Luxury",
+                                                   .default = "Non Luxury")
+                                                   )
+```
+
+
+```{r}
 
 
 #df_test <- df_test %>% mutate(brand_luxury = if_else(brand %in% luxurious_brands$brand,"Luxurious","Not Luxurious"))
@@ -629,7 +689,7 @@ rf_preds <- tibble(id = df_test$id,
 
 rf_preds <- rf_preds %>% mutate(across(price, ~replace_na(., median(., na.rm=TRUE))))
 
-write_csv(rf_preds, file="predictions10.csv")
+write_csv(rf_preds, file="predictions19.csv")
 ```
 
 
@@ -655,7 +715,7 @@ xgb_preds <- tibble(id = df_test$id,
 
 xgb_preds <- xgb_preds %>% mutate(across(price, ~replace_na(., median(., na.rm=TRUE))))
 
-write_csv(xgb_preds, file="predictions12.csv")
+write_csv(xgb_preds, file="predictions21.csv")
 ```
 
 
