@@ -441,9 +441,9 @@ df_train <- df_train %>% mutate(int_color_group = case_when(
 
 df_train <- df_train %>% mutate(premiumness = case_when(price > 10^6 ~ "Luxurious",
                                                         price < 10^6 & price >250000 ~ "Premium",
-                                                        price > 80000 & price <= 250000 ~ "Mid range",
+                                                        price > 15000 & price <= 250000 ~ "Mid range",
                                                         
-                                                        price <= 80000 ~ "General"))
+                                                        price <= 15000 ~ "General"))
 
 luxurious_brands <- df_train %>% filter(premiumness == "Luxurious") %>% select(brand)
 general_brands <- df_train %>% filter(premiumness == "General") %>% select(brand)
@@ -495,7 +495,7 @@ df_train <- df_train %>%
 ```{r}
 
 
-linear_model <- lm(price ~ ., data = df_train[,-1])
+linear_model <- lm(log(price) ~ ., data = df_train[,-1])
 ```
 
 
@@ -643,7 +643,7 @@ df_test <- df_test %>% mutate(luxury_models = case_when(
 
 
 #df_test <- df_test %>% mutate(brand_luxury = if_else(brand %in% luxurious_brands$brand,"Luxurious","Not Luxurious"))
-df_test <- df_test %>% mutate(brand_general= if_else(brand %in% luxurious_brands$brand,"General","Not General"))
+df_test <- df_test %>% mutate(brand_general= if_else(brand %in% general_brands$brand,"General","Not General"))
 ```
 
 
@@ -663,11 +663,11 @@ df_test
 
 ```{r}
 linear_preds <- tibble(id = df_test$id,
-  price = predict(linear_model,newdata=df_test))
+  price = exp(predict(linear_model,newdata=df_test)))
 
 linear_preds <- linear_preds %>% mutate(across(price, ~replace_na(., median(., na.rm=TRUE))))
 
-write_csv(linear_preds, file="predictions17.csv")
+write_csv(linear_preds, file="predictions24.csv")
 ```
 
 # Random forest
@@ -704,7 +704,7 @@ xgb_spec <- boost_tree(min_n = 4) |>
   set_engine("xgboost")
 
 xgb_model <- xgb_spec |> 
-  fit(price~ ., data = df_train %>% select(-id))
+  fit(price ~ ., data = df_train %>% select(-id))
 ```
 
 
@@ -716,7 +716,7 @@ xgb_preds <- tibble(id = df_test$id,
 
 xgb_preds <- xgb_preds %>% mutate(across(price, ~replace_na(., median(., na.rm=TRUE))))
 
-write_csv(xgb_preds, file="predictions23.csv")
+write_csv(xgb_preds, file="predictions31.csv")
 ```
 
 
@@ -725,6 +725,6 @@ preds <- tibble(id = df_train$id,
                 pred_price =  predict(xgb_model,new_data=df_train)$.pred,
                 actual_price = df_train$price)
 
-ggplot(data = preds,aes(x = log(pred_price),y = log(actual_price))) + geom_point() + geom_smooth() + coord_fixed(ratio = 1)
+ggplot(data = preds,aes(x = pred_price,y = actual_price)) + geom_point() + geom_smooth() #+ coord_fixed(ratio = 1)
 ```
 
