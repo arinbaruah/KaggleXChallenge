@@ -679,7 +679,7 @@ write_csv(linear_preds, file="predictions24.csv")
 ```{r}
 library(randomForest)
 
-rf_model <- randomForest(price ~ ., data = df_train, ntree = 500, 
+rf_model <- randomForest(price ~ ., data = df_train[,-1], ntree = 500, 
                          mtry = 3,min_n = 5, importance = TRUE)
 ```
 
@@ -691,7 +691,7 @@ rf_preds <- tibble(id = df_test$id,
 
 rf_preds <- rf_preds %>% mutate(across(price, ~replace_na(., mean(., na.rm=TRUE))))
 
-write_csv(rf_preds, file="predictions34.csv")
+write_csv(rf_preds, file="predictions35.csv")
 ```
 
 
@@ -725,63 +725,41 @@ write_csv(xgb_preds, file="predictions35.csv")
 
 
 
-# LightGBM
-
-```{r include=FALSE,echo=TRUE}
-
-library(janitor)
-
-df_train <- clean_names(df_train)
-df_test <- clean_names(df_test)
-
-# Split the data into training and testing sets
-set.seed(123)  # For reproducibility
-
-# Prepare the training and testing matrices
-trainm = sparse.model.matrix(price~., data = df_train)
-
-# Define the labels
-train_label = df_train[, "price"]
-
-
-# Create the training dataset for LightGBM
-train_matrix = lgb.Dataset(data = as.matrix(trainm), label = train_label)
-
-# Define parameters for LightGBM
-params = list(
-  objective = "regression",
-  metric = "rmse",
-  learning_rate = 0.1,
-  num_leaves = 31,
-  max_depth = -1,
-  min_data_in_leaf = 20,
-  feature_fraction = 0.8
-)
-
-```
-
-
-```{r}
-# Train the LightGBM model
-model_lgb = lgb.train(
-  params = params,
-  data = train_matrix,
-  nrounds = 100,
-  verbose = 1
-)
-
-# Make predictions on the test set
-predictions = predict(model_lgb, as.matrix(trainm))
-
-```
 
 
 ```{r}
 preds <- tibble(id = df_train$id,
-                pred_price =  predict(xgb_model,new_data=df_train)$.pred,
+                pred_price =  predict(lgb_model,new_data=df_train)$.pred,
                 actual_price = df_train$price)
 
 ggplot(data = preds,aes(x = pred_price,y = actual_price)) + geom_point() + geom_smooth() + coord_fixed(ratio = 1)
 ```
 
+# LightGBM
 
+```{r}
+# Load necessary libraries
+library(Matrix)
+library(lightgbm)
+library(bonsai)
+df_train <- df_train %>% filter(price < 10^6)
+
+lgb_spec <- boost_tree(min_n = 4) |>
+  set_mode("regression") |>
+  set_engine("lightgbm")
+
+lgb_model <- lgb_spec |> 
+  fit(price ~ ., data = df_train %>% select(-id))
+
+```
+
+
+```{r}
+
+lgb_preds <- tibble(id = df_test$id,
+  price = predict(lgb_model,new_data=df_test)$.pred)
+
+lgb_preds <- lgb_preds %>% mutate(across(price, ~replace_na(., median(., na.rm=TRUE))))
+
+write_csv(lgb_preds, file="predictions36.csv")
+```
