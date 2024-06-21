@@ -7,6 +7,8 @@ format: html
 ```{r}
 library(tidyverse)
 library(naniar)
+library(lightgbm)
+library(Matrix)
 ```
 
 ```{r}
@@ -21,7 +23,7 @@ ggplot(data = df_train,aes(y = as.factor(model_year),x = price)) + geom_boxplot(
 ```
 
 ```{r}
-ggplot(data = df_train,aes(y = milage,x = price)) + geom_point()
+ggplot(data = df_train,aes(y = Engine_spec2,x = price)) + geom_point()
 ```
 
 ```{r}
@@ -441,9 +443,9 @@ df_train <- df_train %>% mutate(int_color_group = case_when(
 
 df_train <- df_train %>% mutate(premiumness = case_when(price > 10^6 ~ "Luxurious",
                                                         price < 10^6 & price >250000 ~ "Premium",
-                                                        price > 15000 & price <= 250000 ~ "Mid range",
+                                                        price > 20000 & price <= 250000 ~ "Mid range",
                                                         
-                                                        price <= 15000 ~ "General"))
+                                                        price <= 20000 ~ "General"))
 
 luxurious_brands <- df_train %>% filter(premiumness == "Luxurious") %>% select(brand)
 general_brands <- df_train %>% filter(premiumness == "General") %>% select(brand)
@@ -486,6 +488,8 @@ df_train
 ```
 
 ```{r}
+#df_train <- df_train %>% filter(Engine_spec1 > 0)
+
 df_train <- df_train %>%
   mutate(across(c(Engine_spec1, Engine_spec2, Engine_spec3), ~ replace_na(., median(., na.rm = TRUE))))
 ```
@@ -676,7 +680,7 @@ write_csv(linear_preds, file="predictions24.csv")
 library(randomForest)
 
 rf_model <- randomForest(price ~ ., data = df_train, ntree = 500, 
-                         mtry = 3,min_n = 2, importance = TRUE)
+                         mtry = 3,min_n = 5, importance = TRUE)
 ```
 
 
@@ -685,9 +689,9 @@ rf_model <- randomForest(price ~ ., data = df_train, ntree = 500,
 rf_preds <- tibble(id = df_test$id,
   price = predict(rf_model,newdata=df_test))
 
-rf_preds <- rf_preds %>% mutate(across(price, ~replace_na(., median(., na.rm=TRUE))))
+rf_preds <- rf_preds %>% mutate(across(price, ~replace_na(., mean(., na.rm=TRUE))))
 
-write_csv(rf_preds, file="predictions19.csv")
+write_csv(rf_preds, file="predictions34.csv")
 ```
 
 
@@ -716,7 +720,59 @@ xgb_preds <- tibble(id = df_test$id,
 
 xgb_preds <- xgb_preds %>% mutate(across(price, ~replace_na(., median(., na.rm=TRUE))))
 
-write_csv(xgb_preds, file="predictions31.csv")
+write_csv(xgb_preds, file="predictions35.csv")
+```
+
+
+
+# LightGBM
+
+```{r include=FALSE,echo=TRUE}
+
+library(janitor)
+
+df_train <- clean_names(df_train)
+df_test <- clean_names(df_test)
+
+# Split the data into training and testing sets
+set.seed(123)  # For reproducibility
+
+# Prepare the training and testing matrices
+trainm = sparse.model.matrix(price~., data = df_train)
+
+# Define the labels
+train_label = df_train[, "price"]
+
+
+# Create the training dataset for LightGBM
+train_matrix = lgb.Dataset(data = as.matrix(trainm), label = train_label)
+
+# Define parameters for LightGBM
+params = list(
+  objective = "regression",
+  metric = "rmse",
+  learning_rate = 0.1,
+  num_leaves = 31,
+  max_depth = -1,
+  min_data_in_leaf = 20,
+  feature_fraction = 0.8
+)
+
+```
+
+
+```{r}
+# Train the LightGBM model
+model_lgb = lgb.train(
+  params = params,
+  data = train_matrix,
+  nrounds = 100,
+  verbose = 1
+)
+
+# Make predictions on the test set
+predictions = predict(model_lgb, as.matrix(trainm))
+
 ```
 
 
@@ -725,6 +781,7 @@ preds <- tibble(id = df_train$id,
                 pred_price =  predict(xgb_model,new_data=df_train)$.pred,
                 actual_price = df_train$price)
 
-ggplot(data = preds,aes(x = pred_price,y = actual_price)) + geom_point() + geom_smooth() #+ coord_fixed(ratio = 1)
+ggplot(data = preds,aes(x = pred_price,y = actual_price)) + geom_point() + geom_smooth() + coord_fixed(ratio = 1)
 ```
+
 
