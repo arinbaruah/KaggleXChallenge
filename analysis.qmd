@@ -441,17 +441,22 @@ df_train <- df_train %>% mutate(int_color_group = case_when(
 
 ```{r}
 
-df_train <- df_train %>% mutate(premiumness = case_when(price > 10^6 ~ "Luxurious",
-                                                        price < 10^6 & price >250000 ~ "Premium",
-                                                        price > 20000 & price <= 250000 ~ "Mid range",
+df_train <- df_train %>% mutate(premiumness = case_when(price > 10^6 ~ "Exotic",
+                                                        price < 10^6 & price > 500000 ~ "Luxurious",
+                                                        price > 150000 & price <= 500000 ~ "Premium",
+                                                        price > 80000 & price <= 150000 ~ "Upper Mid range",
+                                                        price > 20000 & price <= 80000 ~ "Mid range",
                                                         
-                                                        price <= 20000 ~ "General"))
+                                                        price <= 20000 ~ "Budget"))
 
 luxurious_brands <- df_train %>% filter(premiumness == "Luxurious") %>% select(brand)
-general_brands <- df_train %>% filter(premiumness == "General") %>% select(brand)
+budget_brands <- df_train %>% filter(premiumness == "Budget") %>% select(brand)
+premium_brands <- df_train %>% filter(premiumness == "Premium") %>% select(brand)
 
-#df_train <- df_train %>% mutate(brand_luxury= if_else(brand %in% luxurious_brands$brand,"Luxurious","Not Luxurious"))
-df_train <- df_train %>% mutate(brand_general= if_else(brand %in% luxurious_brands$brand,"General","Not General"))
+
+df_train <- df_train %>% mutate(brand_budget = if_else(brand %in% budget_brands$brand,1,0))
+df_train <- df_train %>% mutate(brand_premium = if_else(brand %in% premium_brands$brand,1,0))
+df_train <- df_train %>% mutate(brand_luxurious = if_else(brand %in% luxurious_brands$brand,1,0))
 
 ```
 
@@ -646,8 +651,10 @@ df_test <- df_test %>% mutate(luxury_models = case_when(
 ```{r}
 
 
-#df_test <- df_test %>% mutate(brand_luxury = if_else(brand %in% luxurious_brands$brand,"Luxurious","Not Luxurious"))
-df_test <- df_test %>% mutate(brand_general= if_else(brand %in% general_brands$brand,"General","Not General"))
+df_test <- df_test %>% mutate(brand_budget = if_else(brand %in% budget_brands$brand,1,0))
+df_test <- df_test %>% mutate(brand_premium = if_else(brand %in% premium_brands$brand,1,0))
+df_test <- df_test %>% mutate(brand_luxurious = if_else(brand %in% luxurious_brands$brand,1,0))
+
 ```
 
 
@@ -664,6 +671,26 @@ df_test <- df_test %>% select(-c(engine,brand,model,transmission,Engine_spec9,En
 df_test
 ```
 
+# Correlation plot
+
+
+
+```{r corrplot}
+library(corrplot)
+
+corrplot(cor(df_train %>% select_if(is.numeric)),        # Correlation matrix
+         method = "number", # Correlation plot method
+         type = "full",    # Correlation plot style (also "upper" and "lower")
+         diag = TRUE,      # If TRUE (default), adds the diagonal
+         tl.col = "black", # Labels color
+         bg = "white",     # Background color
+         title = "",       # Main title
+         col = NULL,
+         number.cex = 0.7)
+
+```
+
+
 
 ```{r}
 linear_preds <- tibble(id = df_test$id,
@@ -679,8 +706,9 @@ write_csv(linear_preds, file="predictions24.csv")
 ```{r}
 library(randomForest)
 
+set.seed(123)
 rf_model <- randomForest(price ~ ., data = df_train[,-1], ntree = 500, 
-                         mtry = 3,min_n = 5, importance = TRUE)
+                         mtry = 3,min_n = 7, importance = TRUE)
 ```
 
 
@@ -691,7 +719,7 @@ rf_preds <- tibble(id = df_test$id,
 
 rf_preds <- rf_preds %>% mutate(across(price, ~replace_na(., mean(., na.rm=TRUE))))
 
-write_csv(rf_preds, file="predictions35.csv")
+write_csv(rf_preds, file="predictions37.csv")
 ```
 
 
@@ -720,7 +748,7 @@ xgb_preds <- tibble(id = df_test$id,
 
 xgb_preds <- xgb_preds %>% mutate(across(price, ~replace_na(., median(., na.rm=TRUE))))
 
-write_csv(xgb_preds, file="predictions35.csv")
+write_csv(xgb_preds, file="predictions41.csv")
 ```
 
 
@@ -729,10 +757,10 @@ write_csv(xgb_preds, file="predictions35.csv")
 
 ```{r}
 preds <- tibble(id = df_train$id,
-                pred_price =  predict(lgb_model,new_data=df_train)$.pred,
+                pred_price =  predict(xgb_model,new_data=df_train)$.pred,
                 actual_price = df_train$price)
 
-ggplot(data = preds,aes(x = pred_price,y = actual_price)) + geom_point() + geom_smooth() + coord_fixed(ratio = 1)
+ggplot(data = preds,aes(x = pred_price,y = actual_price)) + geom_point() + geom_smooth() + coord_fixed(ratio = 1) + ggtitle(paste0("RMSE:",round(rmse_vec(preds$actual_price,preds$pred_price),2)))
 ```
 
 # LightGBM
@@ -744,7 +772,7 @@ library(lightgbm)
 library(bonsai)
 df_train <- df_train %>% filter(price < 10^6)
 
-lgb_spec <- boost_tree(min_n = 4) |>
+lgb_spec <- boost_tree(min_n = 5) |>
   set_mode("regression") |>
   set_engine("lightgbm")
 
@@ -761,5 +789,6 @@ lgb_preds <- tibble(id = df_test$id,
 
 lgb_preds <- lgb_preds %>% mutate(across(price, ~replace_na(., median(., na.rm=TRUE))))
 
-write_csv(lgb_preds, file="predictions36.csv")
+write_csv(lgb_preds, file="predictions40.csv")
 ```
+
