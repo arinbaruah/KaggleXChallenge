@@ -456,7 +456,7 @@ premium_brands <- df_train %>% filter(premiumness == "Premium") %>% select(brand
 
 df_train <- df_train %>% mutate(brand_budget = if_else(brand %in% budget_brands$brand,1,0))
 df_train <- df_train %>% mutate(brand_premium = if_else(brand %in% premium_brands$brand,1,0))
-df_train <- df_train %>% mutate(brand_luxurious = if_else(brand %in% luxurious_brands$brand,1,0))
+#df_train <- df_train %>% mutate(brand_luxurious = if_else(brand %in% luxurious_brands$brand,1,0))
 
 ```
 
@@ -504,7 +504,7 @@ df_train <- df_train %>%
 ```{r}
 
 
-linear_model <- lm(log(price) ~ ., data = df_train[,-1])
+linear_model <- lm(price ~ ., data = df_train[,-1])
 ```
 
 
@@ -653,7 +653,7 @@ df_test <- df_test %>% mutate(luxury_models = case_when(
 
 df_test <- df_test %>% mutate(brand_budget = if_else(brand %in% budget_brands$brand,1,0))
 df_test <- df_test %>% mutate(brand_premium = if_else(brand %in% premium_brands$brand,1,0))
-df_test <- df_test %>% mutate(brand_luxurious = if_else(brand %in% luxurious_brands$brand,1,0))
+#df_test <- df_test %>% mutate(brand_luxurious = if_else(brand %in% luxurious_brands$brand,1,0))
 
 ```
 
@@ -698,7 +698,7 @@ linear_preds <- tibble(id = df_test$id,
 
 linear_preds <- linear_preds %>% mutate(across(price, ~replace_na(., median(., na.rm=TRUE))))
 
-write_csv(linear_preds, file="predictions24.csv")
+write_csv(linear_preds, file="predictions43.csv")
 ```
 
 # Random forest
@@ -731,7 +731,7 @@ library(tidymodels)
 
 df_train <- df_train %>% filter(price < 10^6)
 
-xgb_spec <- boost_tree(min_n = 4) |>
+xgb_spec <- boost_tree(min_n = 2) |>
   set_mode("regression") |>
   set_engine("xgboost")
 
@@ -748,7 +748,7 @@ xgb_preds <- tibble(id = df_test$id,
 
 xgb_preds <- xgb_preds %>% mutate(across(price, ~replace_na(., median(., na.rm=TRUE))))
 
-write_csv(xgb_preds, file="predictions41.csv")
+write_csv(xgb_preds, file="predictions45.csv")
 ```
 
 
